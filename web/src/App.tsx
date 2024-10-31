@@ -1,5 +1,4 @@
 import { useState } from "react";
-import logo from "./assets/logo.jpg";
 
 const App = () => {
   const [messages, setMessages] = useState([{ text: "გამარჯობა", initiator: "system" }]);
@@ -35,26 +34,23 @@ const App = () => {
                 key={index}
                 className={`flex ${
                   isSystem ? "justify-start gap-2 items-center" : "justify-end"
-                } mb-2`}
+                } mb-4`}
               >
                 {isSystem && (
                   <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center overflow-hidden justify-center text-white">
-                    <img src={logo} alt="Retain Logo" />
+                    <img src="/logo.jpg" alt="Retain Logo" />
                   </div>
                 )}
                 <div
-                  className={`max-w-xs py-1 ${isSystem ? "" : " bg-slate-200 rounded-full px-4"}`}
+                  className={`max-w-xs py-1 ${
+                    isSystem ? "" : " bg-[rgb(244,244,244)] rounded-2xl px-4"
+                  }`}
                 >
                   {message.text}
                 </div>
               </div>
             );
           })}
-          {loading && (
-            <div className="max-w-max p-2 rounded-lg shadow mb-2 bg-blue-200 text-blue-800 rounded-bl-none">
-              Loading...
-            </div>
-          )}
         </div>
         <div className="flex items-center mb-5 px-3 gap-4">
           <input
