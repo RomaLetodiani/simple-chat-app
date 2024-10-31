@@ -7,7 +7,9 @@
     "dev": "vite-react-ssg dev",
     "build": "tsc -b && vite-react-ssg build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+		"format": "prettier --write ."
+
   },
   "dependencies": {
     "react": "^18.3.1",
