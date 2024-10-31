@@ -1,4 +1,5 @@
 import { useState } from "react";
+import logo from "./assets/logo.jpg";
 
 const App = () => {
   const [messages, setMessages] = useState([{ text: "გამარჯობა", initiator: "system" }]);
@@ -24,34 +25,38 @@ const App = () => {
     <div className="  bg-gray-100">
       <div className="w-full flex flex-col bg-white min-h-dvh">
         <div className="border-b">
-          <h1 className="text-lg font-semibold py-2 px-5 text-center">QR Chat</h1>
+          <h1 className="text-lg font-semibold py-2 px-3 text-center">QR Chat</h1>
         </div>
-        <div className="overflow-y-auto h-[calc(100dvh-106px)] py-3 px-5">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${
-                message.initiator === "user" ? "justify-end" : "justify-start"
-              } mb-2`}
-            >
+        <div className="overflow-y-auto h-[calc(100dvh-106px)] py-3 px-3">
+          {messages.map((message, index) => {
+            const isSystem = message.initiator === "system";
+            return (
               <div
-                className={`max-w-xs p-2 rounded-lg shadow ${
-                  message.initiator === "system"
-                    ? "bg-blue-200 text-blue-800 rounded-bl-none"
-                    : "bg-green-200 text-green-800 rounded-br-none"
-                }`}
+                key={index}
+                className={`flex ${
+                  isSystem ? "justify-start gap-2 items-center" : "justify-end"
+                } mb-2`}
               >
-                {message.text}
+                {isSystem && (
+                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center overflow-hidden justify-center text-white">
+                    <img src={logo} alt="Retain Logo" />
+                  </div>
+                )}
+                <div
+                  className={`max-w-xs py-1 ${isSystem ? "" : " bg-slate-200 rounded-full px-4"}`}
+                >
+                  {message.text}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {loading && (
             <div className="max-w-max p-2 rounded-lg shadow mb-2 bg-blue-200 text-blue-800 rounded-bl-none">
               Loading...
             </div>
           )}
         </div>
-        <div className="flex items-center mb-5 px-5 gap-4">
+        <div className="flex items-center mb-5 px-3 gap-4">
           <input
             type="text"
             id="message"
