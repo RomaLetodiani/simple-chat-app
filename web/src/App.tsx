@@ -31,28 +31,37 @@ const Header = () => (
 );
 
 // Input Component
-const Input = ({ input, setInput, loading, handleSend }: { input: string; setInput: (value: string) => void; loading: boolean; handleSend: () => void }) => (
-	<footer className="relative mb-5 flex items-center gap-4 px-3">
-		<input
-			type="text"
-			id="message"
-			name="message"
-			autoComplete="off"
-			value={input}
-			onChange={(e) => setInput(e.target.value)}
-			placeholder="Type a message..."
-			className="flex-grow rounded-full border border-gray-300 py-3 pl-5 pr-14 outline-none disabled:opacity-50"
-			disabled={loading}
-		/>
-		<button
-			onClick={handleSend}
-			className="absolute right-6 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-400 text-2xl font-semibold text-white disabled:opacity-50"
-			disabled={loading}
-		>
-			<UpArrowSVG />
-		</button>
-	</footer>
-);
+const Input = ({ input, setInput, loading, handleSend }: { input: string; setInput: (value: string) => void; loading: boolean; handleSend: () => void }) => {
+	const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+		if (event.key === "Enter") {
+			handleSend();
+		}
+	};
+
+	return (
+		<footer className="relative mb-5 flex items-center gap-4 px-3">
+			<input
+				type="text"
+				id="message"
+				name="message"
+				autoComplete="off"
+				value={input}
+				onKeyDown={handleKeyDown}
+				onChange={(e) => setInput(e.target.value)}
+				placeholder="Type a message..."
+				className="flex-grow rounded-full border border-gray-300 py-3 pl-5 pr-14 outline-none disabled:opacity-70"
+				disabled={loading}
+			/>
+			<button
+				onClick={handleSend}
+				className="absolute right-6 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-400 text-2xl font-semibold text-white outline-none disabled:opacity-70"
+				disabled={loading}
+			>
+				<UpArrowSVG />
+			</button>
+		</footer>
+	);
+};
 
 // Message Component
 const Message = memo(({ text, initiator }: Message) => {
