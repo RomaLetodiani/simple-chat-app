@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { KeyboardEvent, memo, useEffect, useRef, useState } from "react";
 
 // Enums and types
 enum Role {
@@ -26,18 +26,47 @@ const UpArrowSVG = () => (
 // Header Component
 const Header = () => (
 	<header className="border-b bg-gray-50">
-		<h1 className="px-3 py-2 text-center text-lg font-semibold">Retain Chat</h1>
+		<h1 className="px-3 py-2 text-center text-lg font-semibold">AI Chat</h1>
 	</header>
 );
 
+type InputProps = {
+	input: string;
+	setInput: (value: string) => void;
+	loading: boolean;
+	handleSend: () => void;
+	scrollToBottom: () => void;
+};
+
 // Input Component
-const Input = ({ input, setInput, loading, handleSend }: { input: string; setInput: (value: string) => void; loading: boolean; handleSend: () => void }) => {
-	const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+const Input = ({ input, setInput, loading, handleSend, scrollToBottom }: InputProps) => {
+	const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
 		if (event.key === "Enter") {
 			handleSend();
 		}
 	};
+	const inputRef = useRef<HTMLInputElement>(null);
+	const [isFocused, setIsFocused] = useState<boolean>(false);
 
+	// Focus on the input when the component is rendered
+
+	useEffect(() => {
+		inputRef.current?.focus();
+	}, []);
+
+	useEffect(() => {
+		const onFocus = () => setIsFocused(true);
+		const onBlur = () => setIsFocused(false);
+
+		const currentRef = inputRef.current;
+		currentRef?.addEventListener("focus", onFocus);
+		currentRef?.addEventListener("blur", onBlur);
+
+		return () => {
+			currentRef?.removeEventListener("focus", onFocus);
+			currentRef?.removeEventListener("blur", onBlur);
+		};
+	}, [inputRef]);
 	return (
 		<footer className="relative mb-5 flex items-center gap-4 px-3">
 			<input
@@ -46,15 +75,16 @@ const Input = ({ input, setInput, loading, handleSend }: { input: string; setInp
 				name="message"
 				autoComplete="off"
 				value={input}
+				onClick={scrollToBottom}
+				ref={inputRef}
 				onKeyDown={handleKeyDown}
 				onChange={(e) => setInput(e.target.value)}
 				placeholder="Type a message..."
-				className="flex-grow rounded-full border border-gray-300 py-3 pl-5 pr-14 outline-none disabled:opacity-70"
-				disabled={loading}
+				className="w-full flex-grow rounded-full border border-gray-300 py-3 pl-5 pr-14 outline-none"
 			/>
 			<button
 				onClick={handleSend}
-				className="absolute right-6 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-400 text-2xl font-semibold text-white outline-none disabled:opacity-70"
+				className={`absolute right-6 ${isFocused ? "bg-gray-600" : "bg-gray-400"} top-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-400 text-2xl font-semibold text-white outline-none disabled:opacity-70`}
 				disabled={loading}
 			>
 				<UpArrowSVG />
@@ -114,12 +144,19 @@ const useHandleMessages = () => {
 // Main App Component
 const App = () => {
 	const { messages, handleSend, loading, input, setInput } = useHandleMessages();
+	const chatRef = useRef<HTMLElement>(null);
+
+	const scrollToBottom = () => {
+		if (chatRef.current) {
+			chatRef.current.scrollTop = chatRef.current.scrollHeight;
+		}
+	};
 
 	return (
 		<div className="flex min-h-dvh w-full flex-col bg-gray-100">
 			<Header />
 			<Chat messages={messages} />
-			<Input input={input} setInput={setInput} loading={loading} handleSend={handleSend} />
+			<Input input={input} setInput={setInput} loading={loading} handleSend={handleSend} scrollToBottom={scrollToBottom} />
 		</div>
 	);
 };
