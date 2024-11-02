@@ -1,4 +1,4 @@
-import { KeyboardEvent, memo, useEffect, useRef, useState } from "react";
+import { forwardRef, KeyboardEvent, memo, useEffect, useRef, useState } from "react";
 
 // Enums and types
 enum Role {
@@ -109,13 +109,17 @@ const Message = memo(({ content, role }: Message) => {
 });
 
 // Chat Component
-const Chat = memo(({ messages }: { messages: Message[] }) => (
-	<main className="h-[calc(100dvh-114px)] overflow-y-auto px-3 py-3">
-		{messages.map((message, index) => (
-			<Message key={index} {...message} />
-		))}
-	</main>
-));
+const Chat = memo(
+	forwardRef<HTMLElement, { messages: Message[] }>(({ messages }, ref) => {
+		return (
+			<main ref={ref} className="h-full overflow-y-auto px-3 py-3">
+				{messages.map((message, index) => (
+					<Message key={index} {...message} />
+				))}
+			</main>
+		);
+	})
+);
 
 // Custom Hook for handling messages
 const useHandleMessages = () => {
@@ -155,7 +159,7 @@ const App = () => {
 	return (
 		<div className="flex min-h-dvh w-full flex-col bg-gray-100">
 			<Header />
-			<Chat messages={messages} />
+			<Chat ref={chatRef} messages={messages} />
 			<Input input={input} setInput={setInput} loading={loading} handleSend={handleSend} scrollToBottom={scrollToBottom} />
 		</div>
 	);
