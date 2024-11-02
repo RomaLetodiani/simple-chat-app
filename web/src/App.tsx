@@ -1,12 +1,7 @@
 import axios from "axios";
 import GraphemeSplitter from "grapheme-splitter";
-import TypewriterComponent from "typewriter-effect";
-import { forwardRef, KeyboardEvent, memo, useEffect, useRef, useState } from "react";
-
-const stringSplitter = (string: string) => {
-	const splitter = new GraphemeSplitter();
-	return splitter.splitGraphemes(string);
-};
+import TypewriterComponent, { type TypewriterClass } from "typewriter-effect";
+import { forwardRef, type KeyboardEvent, memo, useEffect, useRef, useState } from "react";
 
 // Enums and types
 enum Role {
@@ -101,45 +96,84 @@ const Input = ({ input, setInput, loading, handleSend, scrollToBottom }: InputPr
 	);
 };
 
-// Message Component
-const Message = memo(({ content, role }: Message) => {
+const AssistantAvatar = () => (
+	<div className="mt-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-blue-500 text-white">
+		<img src="/logo.jpg" className="h-full w-full" alt="Logo" />
+	</div>
+);
+
+type AssistantMessageProps = {
+	content: string;
+	scrollIntoView: () => void;
+};
+
+const useAssistantMessage = ({ content, scrollIntoView }: AssistantMessageProps) => {
+	const stringSplitter = (string: string) => {
+		const splitter = new GraphemeSplitter();
+		return splitter.splitGraphemes(string);
+	};
+
+	const options = {
+		delay: 0,
+		loop: false,
+		cursor: "",
+		stringSplitter
+	};
+
+	const onInit = (typewriter: TypewriterClass) => {
+		typewriter
+			.typeString(content)
+			.start()
+			.callFunction(() => {
+				scrollIntoView();
+			});
+	};
+
+	return { options, onInit };
+};
+
+const AssistantMessage = (props: AssistantMessageProps) => {
+	const { options, onInit } = useAssistantMessage(props);
+
+	return (
+		<div className="mb-4 flex justify-start gap-2">
+			<AssistantAvatar />
+			<div className="max-w-xs flex-1 break-words rounded-3xl bg-gray-200 px-5 py-2.5 lg:max-w-2xl">
+				<TypewriterComponent
+					// @ts-ignore
+					options={options}
+					onInit={onInit}
+				/>
+			</div>
+		</div>
+	);
+};
+
+const useHandleMessage = () => {
 	const messageRef = useRef<HTMLDivElement>(null);
-	const isAssistant = role === Role.Assistant;
+
+	const scrollIntoView = () => {
+		messageRef.current?.scrollIntoView({ behavior: "smooth" });
+	};
 
 	useEffect(() => {
 		// Scroll to the bottom of the message when it's rendered
-		messageRef.current?.scrollIntoView({ behavior: "smooth" });
+		scrollIntoView();
 	}, []);
+
+	return { messageRef, scrollIntoView };
+};
+
+// Message Component
+const Message = memo(({ content, role }: Message) => {
+	const { messageRef, scrollIntoView } = useHandleMessage();
+	const isAssistant = role === Role.Assistant;
 
 	return (
 		<div className={`flex ${isAssistant ? "justify-start gap-2" : "justify-end"} mb-4`}>
-			{isAssistant && (
-				<div className="mt-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-blue-500 text-white">
-					<img src="/logo.jpg" className="h-full w-full" alt="Retain Logo" />
-				</div>
-			)}
+			{isAssistant && <AssistantAvatar />}
 			<div ref={messageRef} className={`max-w-xs break-words lg:max-w-2xl ${isAssistant ? "flex-1" : "rounded-3xl bg-gray-200 px-5 py-2.5"}`}>
-				{isAssistant ? (
-					<TypewriterComponent
-						options={{
-							delay: 0,
-							loop: false,
-							cursor: "",
-							// @ts-ignore
-							stringSplitter
-						}}
-						onInit={(typewriter) => {
-							typewriter
-								.typeString(content)
-								.start()
-								.callFunction(() => {
-									messageRef.current?.scrollIntoView({ behavior: "smooth" });
-								});
-						}}
-					/>
-				) : (
-					<p>{content}</p>
-				)}
+				{isAssistant ? <AssistantMessage content={content} scrollIntoView={scrollIntoView} /> : <p>{content}</p>}
 			</div>
 		</div>
 	);
