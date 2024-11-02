@@ -33,16 +33,11 @@ const Header = () => (
 	</header>
 );
 
-type InputProps = {
-	input: string;
-	setInput: (value: string) => void;
-	loading: boolean;
+type HandleInputProps = {
 	handleSend: () => void;
-	scrollToBottom: () => void;
 };
 
-// Input Component
-const Input = ({ input, setInput, loading, handleSend, scrollToBottom }: InputProps) => {
+const useHandleInput = ({ handleSend }: HandleInputProps) => {
 	const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
 		if (event.key === "Enter") {
 			handleSend();
@@ -70,6 +65,21 @@ const Input = ({ input, setInput, loading, handleSend, scrollToBottom }: InputPr
 			currentRef?.removeEventListener("blur", onBlur);
 		};
 	}, [inputRef]);
+
+	return { inputRef, handleKeyDown, isFocused };
+};
+
+type InputProps = {
+	input: string;
+	setInput: (value: string) => void;
+	loading: boolean;
+	scrollToBottom: () => void;
+} & HandleInputProps;
+
+// Input Component
+const Input = ({ input, setInput, loading, handleSend, scrollToBottom }: InputProps) => {
+	const { inputRef, handleKeyDown, isFocused } = useHandleInput({ handleSend });
+
 	return (
 		<footer className="relative mb-5 flex items-center gap-4 px-3">
 			<input
