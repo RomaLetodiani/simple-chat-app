@@ -87,7 +87,7 @@ const Input = ({ input, setInput, loading, handleSend, scrollToBottom }: InputPr
 			/>
 			<button
 				onClick={handleSend}
-				className={`absolute right-6 ${isFocused ? "bg-gray-600" : "bg-gray-400"} top-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-400 text-2xl font-semibold text-white outline-none disabled:opacity-70`}
+				className={`absolute right-6 ${isFocused || !!input ? "bg-gray-600" : "bg-gray-400"} top-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-400 text-2xl font-semibold text-white outline-none disabled:opacity-70`}
 				disabled={loading}
 			>
 				<UpArrowSVG />
@@ -136,16 +136,11 @@ const AssistantMessage = (props: AssistantMessageProps) => {
 	const { options, onInit } = useAssistantMessage(props);
 
 	return (
-		<div className="mb-4 flex justify-start gap-2">
-			<AssistantAvatar />
-			<div className="max-w-xs flex-1 break-words rounded-3xl bg-gray-200 px-5 py-2.5 lg:max-w-2xl">
-				<TypewriterComponent
-					// @ts-ignore
-					options={options}
-					onInit={onInit}
-				/>
-			</div>
-		</div>
+		<TypewriterComponent
+			onInit={onInit}
+			// @ts-ignore
+			options={options}
+		/>
 	);
 };
 
@@ -214,7 +209,7 @@ const useHandleMessages = () => {
 			setLoading(true);
 
 			try {
-				const { data } = await axios.post(import.meta.env.BASE_URL, {
+				const { data } = await axios.post(import.meta.env.API, {
 					messages: [...messages, newMessage]
 				});
 				setMessages((prev) => [...prev, { role: Role.Assistant, content: data }]);
@@ -241,7 +236,7 @@ const App = () => {
 	};
 
 	return (
-		<div className="flex min-h-dvh w-full flex-col bg-gray-100">
+		<div className="flex h-dvh w-full flex-col bg-gray-100">
 			<Header />
 			<Chat ref={chatRef} messages={messages} />
 			<Input {...inputProps} scrollToBottom={scrollToBottom} />
