@@ -1,3 +1,4 @@
+import axios from "axios";
 import { forwardRef, KeyboardEvent, memo, useEffect, useRef, useState } from "react";
 
 // Enums and types
@@ -123,22 +124,35 @@ const Chat = memo(
 
 // Custom Hook for handling messages
 const useHandleMessages = () => {
-	const [messages, setMessages] = useState<Message[]>([{ content: "გამარჯობა", role: Role.Assistant }]);
+	const [messages, setMessages] = useState<Message[]>([
+		{
+			role: Role.Assistant,
+			content: "Hello! I'm an AI assistant. How can I help you today?"
+		}
+	]);
 	const [input, setInput] = useState<string>("");
 	const [loading, setLoading] = useState<boolean>(false);
 
-	const handleSend = () => {
+	const handleSend = async () => {
+		if (loading) return;
+
 		if (input.trim()) {
 			const newMessage = { content: input, role: Role.User };
 			setMessages((prev) => [...prev, newMessage]);
 			setInput("");
 
 			setLoading(true);
-			setTimeout(() => {
-				const systemMessage = { content: "Fake API call completed", role: Role.Assistant };
-				setMessages((prev) => [...prev, systemMessage]);
+
+			try {
+				const { data } = await axios.post(import.meta.env.BASE_URL, {
+					messages: [...messages, newMessage]
+				});
+				setMessages((prev) => [...prev, { role: Role.Assistant, content: data }]);
+			} catch (error) {
+				console.error("Error fetching assistant message:", error);
+			} finally {
 				setLoading(false);
-			}, 1000);
+			}
 		}
 	};
 
@@ -147,7 +161,7 @@ const useHandleMessages = () => {
 
 // Main App Component
 const App = () => {
-	const { messages, handleSend, loading, input, setInput } = useHandleMessages();
+	const { messages, ...inputProps } = useHandleMessages();
 	const chatRef = useRef<HTMLElement>(null);
 
 	const scrollToBottom = () => {
@@ -160,7 +174,7 @@ const App = () => {
 		<div className="flex min-h-dvh w-full flex-col bg-gray-100">
 			<Header />
 			<Chat ref={chatRef} messages={messages} />
-			<Input input={input} setInput={setInput} loading={loading} handleSend={handleSend} scrollToBottom={scrollToBottom} />
+			<Input {...inputProps} scrollToBottom={scrollToBottom} />
 		</div>
 	);
 };
