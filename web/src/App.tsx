@@ -1,14 +1,14 @@
 import { memo, useState } from "react";
 
 // Enums and types
-enum Initiator {
-	System = "system",
-	User = "user"
+enum Role {
+	User = "user",
+	Assistant = "assistant"
 }
 
 type Message = {
-	text: string;
-	initiator: Initiator;
+	content: string;
+	role: Role;
 };
 
 // SVG Component
@@ -64,8 +64,8 @@ const Input = ({ input, setInput, loading, handleSend }: { input: string; setInp
 };
 
 // Message Component
-const Message = memo(({ text, initiator }: Message) => {
-	const isSystem = initiator === Initiator.System;
+const Message = memo(({ content, role }: Message) => {
+	const isSystem = role === Role.Assistant;
 	return (
 		<div className={`flex ${isSystem ? "items-center justify-start gap-2" : "justify-end"} mb-4`}>
 			{isSystem && (
@@ -73,7 +73,7 @@ const Message = memo(({ text, initiator }: Message) => {
 					<img src="/logo.jpg" alt="Retain Logo" />
 				</div>
 			)}
-			<div className={`max-w-xs break-words py-1 ${isSystem ? "" : "rounded-2xl bg-gray-200 px-4"}`}>{text}</div>
+			<div className={`max-w-xs break-words py-1 ${isSystem ? "" : "rounded-2xl bg-gray-200 px-4"}`}>{content}</div>
 		</div>
 	);
 });
@@ -89,19 +89,19 @@ const Chat = memo(({ messages }: { messages: Message[] }) => (
 
 // Custom Hook for handling messages
 const useHandleMessages = () => {
-	const [messages, setMessages] = useState<Message[]>([{ text: "გამარჯობა", initiator: Initiator.System }]);
+	const [messages, setMessages] = useState<Message[]>([{ content: "გამარჯობა", role: Role.Assistant }]);
 	const [input, setInput] = useState<string>("");
 	const [loading, setLoading] = useState<boolean>(false);
 
 	const handleSend = () => {
 		if (input.trim()) {
-			const newMessage = { text: input, initiator: Initiator.User };
+			const newMessage = { content: input, role: Role.User };
 			setMessages((prev) => [...prev, newMessage]);
 			setInput("");
 
 			setLoading(true);
 			setTimeout(() => {
-				const systemMessage = { text: "Fake API call completed", initiator: Initiator.System };
+				const systemMessage = { content: "Fake API call completed", role: Role.Assistant };
 				setMessages((prev) => [...prev, systemMessage]);
 				setLoading(false);
 			}, 1000);
