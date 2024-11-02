@@ -1,5 +1,12 @@
 import axios from "axios";
+import GraphemeSplitter from "grapheme-splitter";
+import TypewriterComponent from "typewriter-effect";
 import { forwardRef, KeyboardEvent, memo, useEffect, useRef, useState } from "react";
+
+const stringSplitter = (string: string) => {
+	const splitter = new GraphemeSplitter();
+	return splitter.splitGraphemes(string);
+};
 
 // Enums and types
 enum Role {
@@ -96,15 +103,44 @@ const Input = ({ input, setInput, loading, handleSend, scrollToBottom }: InputPr
 
 // Message Component
 const Message = memo(({ content, role }: Message) => {
-	const isSystem = role === Role.Assistant;
+	const messageRef = useRef<HTMLDivElement>(null);
+	const isAssistant = role === Role.Assistant;
+
+	useEffect(() => {
+		// Scroll to the bottom of the message when it's rendered
+		messageRef.current?.scrollIntoView({ behavior: "smooth" });
+	}, []);
+
 	return (
-		<div className={`flex ${isSystem ? "items-center justify-start gap-2" : "justify-end"} mb-4`}>
-			{isSystem && (
-				<div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-blue-500 text-white">
-					<img src="/logo.jpg" alt="Retain Logo" />
+		<div className={`flex ${isAssistant ? "justify-start gap-2" : "justify-end"} mb-4`}>
+			{isAssistant && (
+				<div className="mt-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-blue-500 text-white">
+					<img src="/logo.jpg" className="h-full w-full" alt="Retain Logo" />
 				</div>
 			)}
-			<div className={`max-w-xs break-words py-1 ${isSystem ? "" : "rounded-2xl bg-gray-200 px-4"}`}>{content}</div>
+			<div ref={messageRef} className={`max-w-xs break-words lg:max-w-2xl ${isAssistant ? "flex-1" : "rounded-3xl bg-gray-200 px-5 py-2.5"}`}>
+				{isAssistant ? (
+					<TypewriterComponent
+						options={{
+							delay: 0,
+							loop: false,
+							cursor: "",
+							// @ts-ignore
+							stringSplitter
+						}}
+						onInit={(typewriter) => {
+							typewriter
+								.typeString(content)
+								.start()
+								.callFunction(() => {
+									messageRef.current?.scrollIntoView({ behavior: "smooth" });
+								});
+						}}
+					/>
+				) : (
+					<p>{content}</p>
+				)}
+			</div>
 		</div>
 	);
 });
