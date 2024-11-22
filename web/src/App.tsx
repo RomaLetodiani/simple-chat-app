@@ -1,6 +1,3 @@
-import axios from "axios";
-import GraphemeSplitter from "grapheme-splitter";
-import TypewriterComponent, { type TypewriterClass } from "typewriter-effect";
 import { forwardRef, type KeyboardEvent, memo, useEffect, useRef, useState } from "react";
 
 // Enums and types
@@ -28,16 +25,24 @@ const UpArrowSVG = () => (
 
 // Header Component
 const Header = () => (
-	<header className="border-b bg-gray-50">
-		<h1 className="px-3 py-2 text-center text-lg font-semibold">AI Chat</h1>
+	<header className="flex items-center justify-center border-b bg-gray-50">
+		{/* <h1 className="px-3 py-2 text-center text-lg font-semibold">AI Chat</h1> */}
+		<div className="w-36">
+			<img src="/logo.webp" className="h-full w-full object-contain" alt="Logo" />
+		</div>
 	</header>
 );
 
-type HandleInputProps = {
+type InputProps = {
+	input: string;
+	setInput: (value: string) => void;
+	loading: boolean;
 	handleSend: () => void;
+	scrollToBottom: () => void;
 };
 
-const useHandleInput = ({ handleSend }: HandleInputProps) => {
+// Input Component
+const Input = ({ input, setInput, loading, handleSend, scrollToBottom }: InputProps) => {
 	const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
 		if (event.key === "Enter") {
 			handleSend();
@@ -65,21 +70,6 @@ const useHandleInput = ({ handleSend }: HandleInputProps) => {
 			currentRef?.removeEventListener("blur", onBlur);
 		};
 	}, [inputRef]);
-
-	return { inputRef, handleKeyDown, isFocused };
-};
-
-type InputProps = {
-	input: string;
-	setInput: (value: string) => void;
-	loading: boolean;
-	scrollToBottom: () => void;
-} & HandleInputProps;
-
-// Input Component
-const Input = ({ input, setInput, loading, handleSend, scrollToBottom }: InputProps) => {
-	const { inputRef, handleKeyDown, isFocused } = useHandleInput({ handleSend });
-
 	return (
 		<footer className="relative mb-5 flex items-center gap-4 px-3">
 			<input
@@ -97,8 +87,8 @@ const Input = ({ input, setInput, loading, handleSend, scrollToBottom }: InputPr
 			/>
 			<button
 				onClick={handleSend}
-				className={`absolute right-6 ${isFocused || !!input ? "bg-gray-600" : "bg-gray-400"} top-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-400 text-2xl font-semibold text-white outline-none disabled:opacity-70`}
-				disabled={loading}
+				className={`absolute right-6 ${isFocused ? "bg-gray-600" : "bg-gray-400"} top-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-400 text-2xl font-semibold text-white outline-none disabled:opacity-70`}
+				disabled={loading || !input.trim()}
 			>
 				<UpArrowSVG />
 			</button>
@@ -106,79 +96,25 @@ const Input = ({ input, setInput, loading, handleSend, scrollToBottom }: InputPr
 	);
 };
 
-const AssistantAvatar = () => (
-	<div className="mt-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-blue-500 text-white">
-		<img src="/logo.jpg" className="h-full w-full" alt="Logo" />
-	</div>
-);
-
-type AssistantMessageProps = {
-	content: string;
-	scrollIntoView: () => void;
-};
-
-const useAssistantMessage = ({ content, scrollIntoView }: AssistantMessageProps) => {
-	const stringSplitter = (string: string) => {
-		const splitter = new GraphemeSplitter();
-		return splitter.splitGraphemes(string);
-	};
-
-	const options = {
-		delay: 0,
-		loop: false,
-		cursor: "",
-		stringSplitter
-	};
-
-	const onInit = (typewriter: TypewriterClass) => {
-		typewriter
-			.typeString(content)
-			.start()
-			.callFunction(() => {
-				scrollIntoView();
-			});
-	};
-
-	return { options, onInit };
-};
-
-const AssistantMessage = (props: AssistantMessageProps) => {
-	const { options, onInit } = useAssistantMessage(props);
-
-	return (
-		<TypewriterComponent
-			onInit={onInit}
-			// @ts-ignore
-			options={options}
-		/>
-	);
-};
-
-const useHandleMessage = () => {
+// Message Component
+const Message = memo(({ content, role }: Message) => {
 	const messageRef = useRef<HTMLDivElement>(null);
-
-	const scrollIntoView = () => {
-		messageRef.current?.scrollIntoView({ behavior: "smooth" });
-	};
+	const isAssistant = role === Role.Assistant;
 
 	useEffect(() => {
 		// Scroll to the bottom of the message when it's rendered
-		scrollIntoView();
+		messageRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, []);
-
-	return { messageRef, scrollIntoView };
-};
-
-// Message Component
-const Message = memo(({ content, role }: Message) => {
-	const { messageRef, scrollIntoView } = useHandleMessage();
-	const isAssistant = role === Role.Assistant;
 
 	return (
 		<div className={`flex ${isAssistant ? "justify-start gap-2" : "justify-end"} mb-4`}>
-			{isAssistant && <AssistantAvatar />}
+			{isAssistant && (
+				<div className="mt-1 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-slate-50 text-white">
+					<img src="/logo.webp" className="h-full w-full object-contain" alt="Logo" />
+				</div>
+			)}
 			<div ref={messageRef} className={`max-w-xs break-words lg:max-w-2xl ${isAssistant ? "flex-1" : "rounded-3xl bg-gray-200 px-5 py-2.5"}`}>
-				{isAssistant ? <AssistantMessage content={content} scrollIntoView={scrollIntoView} /> : <p>{content}</p>}
+				<p>{content}</p>
 			</div>
 		</div>
 	);
@@ -202,11 +138,39 @@ const useHandleMessages = () => {
 	const [messages, setMessages] = useState<Message[]>([
 		{
 			role: Role.Assistant,
-			content: "Hello! I'm an AI assistant. How can I help you today?"
+			content: ""
 		}
 	]);
 	const [input, setInput] = useState<string>("");
 	const [loading, setLoading] = useState<boolean>(false);
+
+	useEffect(() => {
+		const typewriter = async () => {
+			setLoading(true);
+			const firstMessage = "Hello! I'm an AI assistant. How can I help you today?";
+
+			const splittedStream = firstMessage.split(" ");
+
+			for (const word of splittedStream) {
+				setMessages((prev) => {
+					const updatedMessages = [...prev];
+					const lastMessage = updatedMessages[updatedMessages.length - 1];
+
+					if (lastMessage.role === Role.Assistant) {
+						lastMessage.content += ` ${word}`;
+					} else {
+						updatedMessages.push({ role: Role.Assistant, content: word });
+					}
+
+					return updatedMessages;
+				});
+				await new Promise((resolve) => setTimeout(resolve, 50));
+			}
+			setLoading(false);
+		};
+
+		typewriter();
+	}, []);
 
 	const handleSend = async () => {
 		if (loading) return;
@@ -215,14 +179,42 @@ const useHandleMessages = () => {
 			const newMessage = { content: input, role: Role.User };
 			setMessages((prev) => [...prev, newMessage]);
 			setInput("");
-
 			setLoading(true);
 
 			try {
-				const { data } = await axios.post(import.meta.env.API, {
-					messages: [...messages, newMessage]
+				const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/chat`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ messages: [...messages, newMessage] })
 				});
-				setMessages((prev) => [...prev, { role: Role.Assistant, content: data }]);
+
+				if (!response.body) throw new Error("No response body");
+
+				const reader = response.body.getReader();
+				const decoder = new TextDecoder("utf-8");
+
+				let content = "";
+
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+
+					const chunk = decoder.decode(value, { stream: true });
+					content += chunk;
+
+					setMessages((prev) => {
+						const updatedMessages = [...prev];
+						const lastMessage = updatedMessages[updatedMessages.length - 1];
+
+						if (lastMessage.role === Role.Assistant) {
+							lastMessage.content += chunk;
+						} else {
+							updatedMessages.push({ role: Role.Assistant, content: chunk });
+						}
+
+						return updatedMessages;
+					});
+				}
 			} catch (error) {
 				console.error("Error fetching assistant message:", error);
 			} finally {
