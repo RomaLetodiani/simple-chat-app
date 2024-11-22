@@ -1,16 +1,18 @@
-FROM --platform=linux/amd64 node:20-alpine AS builder
+FROM --platform=linux/amd64 node:20-alpine AS base
+
+FROM base AS builder
 
 WORKDIR /app
 
-COPY . .
-
-
 COPY package*.json .
 
-RUN npm install
+RUN npm ci
+
+COPY . .
+
 RUN npm run build
 
-FROM --platform=linux/amd64 node:20-alpine AS runner
+FROM base AS runner
 
 WORKDIR /app
 COPY --from=builder /app/dist .
