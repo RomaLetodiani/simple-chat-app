@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: "",
+  baseURL: process.env.OPENAI_API_BASE_URL,
 });
 
 app.get("/health", (req, res) => {
@@ -27,24 +27,27 @@ app.post("/chat", async (req, res) => {
       return;
     }
 
-    const response = await openai.chat.completions.create({
+    const stream = await openai.chat.completions.create({
+      stream: true,
       model: "",
-      temperature: 0.6,
+      temperature: 0.4,
       frequency_penalty: 1.2,
       messages: [
         {
           role: "system",
-          content: ``,
+          content: "",
         },
         ...messages,
       ],
     });
 
-    const message = response.choices[0].message.content;
+    for await (const part of stream) {
+      // here express will stream the response
+      res.write(part.choices[0]?.delta.content || "");
+    }
+    // here express sends the closing/done/end signal for the stream consumer
+    res.end();
 
-    if (!message) throw new Error("No response message");
-
-    res.send(message);
     return;
   } catch (error) {
     console.error(error);
